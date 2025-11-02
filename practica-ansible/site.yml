@@ -1,0 +1,57 @@
+---
+- name: Configurar servidores Ubuntu con Ansible
+  hosts: ubuntu_servers
+  become: true
+  tasks:
+    - name: Actualizar lista de paquetes APT
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Actualizar paquetes instalados (upgrade)
+      apt:
+        upgrade: dist
+      # Si quieres hacerlo no interactivo:
+      # args:
+      #   dpkg_options: 'force-confdef,force-confold'
+
+    - name: Crear usuario itla (con password hashed)  <-- reemplaza USER_PASSWORD_HASH
+      user:
+        name: itla
+        comment: "Usuario itla"
+        shell: /bin/bash
+        createhome: yes
+        password: "$6$REEMPLAZA_POR_HASH_GENERADO_AQUI"
+
+    # Si no quieres establecer password (no login por ssh) usa en su lugar:
+    # - name: Crear usuario itla sin contraseña
+    #   user:
+    #     name: itla
+    #     comment: "Usuario itla"
+    #     shell: /bin/bash
+    #     createhome: yes
+    #     password: "*"
+
+    - name: Crear carpeta /home/itla/app
+      file:
+        path: /home/itla/app
+        state: directory
+        owner: itla
+        group: itla
+        mode: "0755"
+
+    - name: Crear archivo hola.txt dentro de app
+      copy:
+        dest: /home/itla/app/hola.txt
+        content: "Hola desde {{ inventory_hostname }}\n"
+        owner: itla
+        group: itla
+        mode: "0644"
+
+    - name: Instalar cowsay y htop
+      apt:
+        name:
+          - cowsay
+          - htop
+        state: present
+        update_cache: yes
